@@ -11,5 +11,15 @@ Inspired by
 ## Test Execution
 
 ```bash
-idris2 -p contrib -p hash-table Islands.idr -x example
+idris2 -p hash-table Islands.idr -x example
 ```
+
+## Implementation Notes
+
+My choice of sparse representation here is slightly different than Jerome's: while creating a
+two-way mapping from position to id and id to position-set serves to avoid some duplicated
+depth-first traversal, the computational cost of joining islands is incurred up-front and is
+worst-case proportional to the total number of positions added to the graph. Instead, by adding a
+second layer of indirection to the position-keyed mapping - now a position to pointer-to-mutable-id
+mapping - the computational cost to join islands is bounded by the number of islands rather than the
+number of positions.
