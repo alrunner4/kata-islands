@@ -1,3 +1,4 @@
+-- vim: cc=91 tw=90 shiftwidth=3
 ||| Inspired by: Jérôme Cukier @ https://qr.ae/pvHKak
 ||| Authored by: Alexander Carter <alrunner4@gmail.com>
 module Islands
@@ -11,7 +12,7 @@ import Data.List1
 -- Summary --
 
 public export
-interface MonadOcean (m: Type -> Type) where
+interface MutableOcean (m: Type -> Type) where
    Ocean: Type
    newOcean: m Ocean
    (.addLand): Ocean -> (Integer, Integer) -> m Bool
@@ -24,31 +25,31 @@ interface MonadOcean (m: Type -> Type) where
 IslandID: Type
 IslandID = Int
 
-record OceanImpl where
-   constructor MkOcean
+record Ocean_on_IORef where
+   constructor OceanRef
    islands: HashMap (Integer, Integer) (IORef (IORef IslandID))
    next_id: IORef IslandID
    count:   IORef Nat
 
-take_id: HasIO m => OceanImpl -> m IslandID
+take_id: HasIO m => Ocean_on_IORef -> m IslandID
 take_id ocean = do
    i <- readIORef ocean.next_id
    modifyIORef ocean.next_id (+1)
    pure i
 
 (.neighbors): (Integer, Integer) -> List (Integer, Integer)
-(.neighbors) (x,y) = [
-   (x  , y-1) , (x-1, y  ) ,
-   (x  , y+1) , (x+1, y  ) ]
+(x,y).neighbors = [
+   (x, y-1) , (x-1, y) ,
+   (x, y+1) , (x+1, y) ]
 
 export
-{m:_} -> HasIO m => MonadOcean m where
-   Ocean = OceanImpl
-   newOcean = MkOcean
+{m:_} -> HasIO m => MutableOcean m where
+   Ocean = Ocean_on_IORef
+   newOcean = OceanRef
       <$> newHashMap (\(x,y) => cast (x*y))
       <*> newIORef 0
       <*> newIORef 0
-   (.addLand) ocean position@(x,y) = do
+   ocean.addLand position = do
       Nothing <- ocean.islands.lookup position
          | Just _  => pure False
       for position.neighbors (ocean.islands.lookup)
@@ -66,7 +67,7 @@ export
                for_ neighborIslandRefs $ \r => writeIORef r joinedIsland
                modifyIORef ocean.count (`minus` (length neighborIslands `minus` 1))
                pure True
-   (.countIslands) ocean = readIORef ocean.count
+   ocean.countIslands = readIORef ocean.count
 
 
 -----------
