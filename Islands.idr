@@ -12,7 +12,7 @@ import Data.List1
 -- Summary --
 
 public export
-interface MutableOcean (m: Type -> Type) where
+interface MutableOcean (0 m: Type -> Type) where
    Ocean: Type
    newOcean: m Ocean
    (.addLand): Ocean -> (Integer, Integer) -> m Bool
@@ -43,7 +43,7 @@ take_id ocean = do
    (x, y+1) , (x+1, y) ]
 
 export
-{m:_} -> HasIO m => MutableOcean m where
+HasIO m => MutableOcean m where
    Ocean = Ocean_on_IORef
    newOcean = OceanRef
       <$> newHashMap (\(x,y) => cast (x*y))
